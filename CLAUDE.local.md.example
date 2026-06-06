@@ -1,0 +1,11 @@
+# Local memory (machine-only, NEVER committed)
+
+<!-- Personal notes for THIS machine. Gitignored. Not shared with team or production. -->
+<!-- Use for: local ports, local DB creds, personal workflow prefs, scratch notes. -->
+
+## Local config
+- Localhost port: <e.g. 3000>
+- Local DB user/pass: <local-only creds>
+
+## Personal notes
+- <where I left off / TODOs for me only>

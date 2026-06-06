@@ -1,0 +1,8 @@
+{
+  "$comment": "Copy to settings.local.json (gitignored). Personal machine overrides. DANGER: bypassPermissions skips ALL permission prompts — only for a machine/repo you fully trust.",
+  "permissions": {
+    "defaultMode": "bypassPermissions",
+    "allow": ["*"],
+    "deny": []
+  }
+}

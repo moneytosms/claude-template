@@ -1,0 +1,22 @@
+# Normalize line endings to LF in the repo; checkout native per OS.
+* text=auto eol=lf
+
+# Scripts that must stay LF even on Windows checkout.
+*.sh   text eol=lf
+*.ps1  text eol=lf
+
+# Windows batch must be CRLF.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+
+# Treat as binary (no EOL/diff munging).
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.woff binary
+*.woff2 binary

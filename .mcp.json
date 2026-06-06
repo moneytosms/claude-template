@@ -1,0 +1,9 @@
+{
+  "$comment": "MCP servers. Committed = shared with team. Put any secret tokens in env vars (${VAR}), never inline. The /project-onboarding skill adds stack-specific servers (DB, etc.) as needed.",
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@latest"]
+    }
+  }
+}
