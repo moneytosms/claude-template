@@ -9,6 +9,7 @@ and you're left with a clean, fully-configured project.
 
 ## Quick start
 
+**New project** (this clone becomes the project):
 ```sh
 git clone <this-repo> my-project
 cd my-project
@@ -16,7 +17,14 @@ pwsh ./setup.ps1          # Windows
 sh   ./setup.sh           # macOS / Linux / WSL / git-bash
 ```
 
-Flags: `--yes`/`-y` (skip confirm, unattended) · `--dry-run` (show what would happen, change nothing).
+**Existing project** (merge into a repo you already have — keeps its git history):
+```sh
+git clone <this-repo> /tmp/ct && cd /tmp/ct
+pwsh ./setup.ps1 -Into C:\path\to\existing      # Windows
+sh   ./setup.sh  --into /path/to/existing       # macOS / Linux / WSL
+```
+
+Flags: `--yes`/`-y` (unattended) · `--dry-run` (preview, change nothing) · `--into <path>` / `-Into <path>` (existing project).
 
 ### What `setup` does (fully automatic)
 1. **Installs all CLIs** (idempotent): `git node gh rg fd jq bat uv` + **rtk**, via winget/brew/apt/dnf.
@@ -26,14 +34,21 @@ Flags: `--yes`/`-y` (skip confirm, unattended) · `--dry-run` (show what would h
 5. Launches Claude → runs **`/project-onboarding`**.
 
 ### What `/project-onboarding` does
-- **Interviews** you (the only interactive part): name, **platform**, domain, language/stack, commands, license, remote.
+- **Detects mode**: NEW project, EXISTING project (merge, keeps your history), or already-onboarded (just health-checks).
+- **Detailed interview** (the only interactive part): identity, platform, stack, commands, quality bar,
+  architecture, product, and **your workflow preferences** — which automations/hooks you want, output
+  style, domains needing extra skills, MCP servers, and personal rituals to encode as commands/skills.
 - **Auto-installs** default skills: context7 (MCP), graphify, Matt Pocock skills, Addy Osmani agent-skills.
-- **Picks stack tooling** (e.g. ruff+pyrefly / eslint+prettier / clippy) and wires it into hooks + the Commands table.
-- **Fills `CLAUDE.md`** (compact, <200 lines), trims irrelevant rules, writes `.gitignore` + `LICENSE`.
-- **Cleans up**: deletes ALL setup-phase files (see below), writes a fresh project README.
-- **`git init`** + first commit; optional `gh` remote.
+- **Installs workflow-chosen** skills/hooks/MCP from your interview answers; turns your rituals into `/commands`.
+- **Picks stack tooling** (ruff+pyrefly / eslint+prettier / clippy...) and wires it into hooks + Commands table.
+- **Writes or MERGES `CLAUDE.md`** (compact, <200 lines). Existing projects: appends only what's missing,
+  never clobbering your content or `.claude/`.
+- **Recommends** high-value additions for your stack/domain after verification; installs what you accept.
 - **Verifies** via `/doctor` that every tool actually works.
-- **Idempotent**: safe to re-run — detects an already-set-up project and just health-checks it.
+- **Cleans up with no trace**: deletes ALL template/setup files (and the staging dir for existing projects),
+  purges every "claude-template" mention — *before* the first commit.
+- **Commits**: NEW → `git init` + first commit; EXISTING → commits the added config to your existing history.
+- **Idempotent + cross-platform**: safe to re-run; works on Windows/macOS/Linux/WSL, new and existing repos.
 
 ---
 

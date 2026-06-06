@@ -1,116 +1,115 @@
 ---
 name: project-onboarding
-description: One-time setup for a project freshly cloned from claude-template. Interviews the user, installs default tooling, customizes CLAUDE.md and hooks for the stack, scaffolds gitignore, inits git, and removes template-only files. Triggered by setup.ps1/setup.sh, or run manually with /project-onboarding.
+description: One-time setup that turns a clone of claude-template into a fully-configured project — NEW or EXISTING. Runs a detailed interview, installs tooling + workflow-chosen skills/hooks, intelligently writes or MERGES CLAUDE.md and .claude/, verifies via /doctor, suggests improvements, then deletes every trace of the template before the first commit. Triggered by setup.ps1/setup.sh or run manually with /project-onboarding.
 ---
 
 # Project onboarding
 
-You are setting up a brand-new project cloned from `claude-template`. Goal: leave a clean,
-stack-appropriate, git-initialized project with CLAUDE.md filled in and all template scaffolding
-either customized or removed. Be terse (caveman ok), but ASK before destructive/irreversible steps.
+Goal: leave a clean, fully-configured project — CLAUDE.md + .claude/ tailored to the user's stack AND
+their workflow preferences — with **zero trace** that claude-template was ever here. Works for new and
+existing projects, cross-platform. Be terse, but ASK clearly where input is required.
 
-Work in this order. Do not skip the interview — everything downstream depends on it.
+## Mode detection (do FIRST)
+- **Staging present** (`.claude-template/` dir exists): EXISTING-project mode. Setup copied the template
+  here as staging; merge from it into the real repo, never clobbering the user's files, then delete it.
+- **Already onboarded** (no setup.* files AND CLAUDE.md has no `<placeholder>`/`<TBD>`): just run `/doctor`,
+  fix issues, report, stop.
+- **Fresh template clone** (setup.* present, little/no other code): NEW-project mode.
+- Otherwise (real code/.git but template files mixed in): EXISTING-project mode — merge, keep their history.
+Confirm the detected mode in one line before proceeding. In EXISTING mode: read their current
+`CLAUDE.md`, `.claude/**`, `README`, and package manifests BEFORE changing anything.
 
-## Idempotency (safe to re-run)
-First detect whether onboarding already ran: if `setup.ps1`/`setup.sh` are gone OR `CLAUDE.md` has no
-`<placeholder>`/`<TBD>` tokens, the project is already set up. In that case DON'T redo everything —
-just run `/doctor` to verify tooling, fix anything broken, report, and stop. Otherwise proceed.
-Within a fresh run, skip any step already done (skill already copied, LICENSE exists, etc.).
+## 0. Verify tools (setup already installed them)
+`scripts/install-tools` installed git/node/gh/rg/fd/jq/bat/uv/rtk + ran `rtk init -g`. Verify:
+`rtk --version` + `rtk gain` (failure = wrong crate). Install anything missing non-interactively.
 
-## 0. Prerequisites (already installed by setup — verify only)
-`setup.ps1`/`setup.sh` ran `scripts/install-tools` which installed all baseline CLIs
-(git, node, gh, rg, fd, jq, bat, uv, rtk) and ran `rtk init -g --auto-patch`. Just verify:
-- `rtk --version` + `rtk gain` (if `rtk gain` fails it's the wrong crate). Restart hint: rtk hook is
-  active for new sessions. Native Windows = CLAUDE.md fallback (no auto-rewrite); WSL = full.
-- If any tool is still missing (e.g. setup was skipped), install it now via the platform package
-  manager, non-interactively. Stack toolchain + linters (ruff/pyrefly, golangci-lint, cargo...) are
-  installed after the interview in step 3.
-- Cloud/container CLIs (docker, vercel, aws): install on demand only.
+## 1. Interview — HEAVILY DETAILED (batch via the question UI; confirm from files before asking)
+Read existing manifests (package.json, pyproject.toml, go.mod, Cargo.toml, etc.) and CONFIRM rather
+than ask when the answer is already on disk. Cover ALL sections; stop at ~95% confidence.
 
-## 1. Interview (collect everything first, then act)
-Ask, ideally batched via the question UI. Stop when you have ~95% of what you need:
-- Project name + one-line goal + who it's for.
-- **Platform**: OS you develop on (Windows / macOS / Linux / WSL) + target platform(s) you ship to.
-  (Drives rtk hook expectations, path/shell choices, .gitignore, build/test commands.)
-- Domain: web / API / CLI / desktop / mobile / library / data / other.
-- Language(s) + framework/runtime. (If a manifest like package.json/pyproject.toml exists, read it and confirm instead of asking.)
-- Package manager + dev/build/test/lint commands (or "none yet").
-- Does it have: an API? a UI? a database? payments? deploy target/host?
-- Monetization, if any.
-- License: MIT / Apache-2.0 / proprietary / none.
-- Git remote: create one now (gh) or local-only?
-- Anything project-specific to bake into CLAUDE.md rules.
+**A. Identity** — name; one-line goal; audience; the problem it solves; what "success" looks like.
+**B. Platform** — dev OS + shell (Windows/macOS/Linux/WSL); target platform(s); runtime/version.
+**C. Stack** — language(s); framework; package manager; build tool; database/auth; key libraries.
+**D. Commands** — dev, build, test, lint, format, typecheck, deploy (read scripts; confirm).
+**E. Quality bar** — testing style (TDD? coverage target); lint strictness; CI in use?; review process.
+**F. Architecture** — subsystems; data flow; entry points; key files; state/config; SEO/indexing if web.
+**G. Product** — monetization/pricing; feature gating (free vs pro); env vars/secrets the app needs.
+**H. Workflow & preferences (drives which skills/hooks get installed)** —
+  - Output style: terse vs explained; caveman level (off/lite/full/ultra).
+  - Which automations to enable: pre-deploy test guard? auto-format on edit? notify-on-finish?
+    secret-scan pre-commit? commit-msg conventional-commit enforcement?
+  - Commit/branch conventions; who is allowed to push; default branch name.
+  - Domains needing extra skills: frontend design / security / performance / docs+ADR / browser testing
+    / data / API design / infra. (Map each to a skill to install in step 2b.)
+  - MCP servers wanted: github, chrome-devtools, a database server, others.
+  - Any personal rituals/workflows to encode as a custom `/command` or skill (capture the steps).
+**I. Git/remote** — existing remote? create one (gh)? visibility? default branch (prefer `main`).
 
-## 2. Install default skills/plugins (automatic — install all, don't ask)
-Run from `.claude/install-manifest.md`. Install the full default set, verify, report one line each:
-- **context7**: already in `.mcp.json`. No key. Verify resolves.
-- **graphify**: if `~/.claude/skills/graphify` exists, copy into `.claude/skills/graphify`; else clone source.
-- **Matt Pocock skills**: `npx -y skills@latest add mattpocock/skills` (use non-interactive flags if available; install the full set).
-- **Addy Osmani agent-skills**: if not already global, `/plugin marketplace add addyosmani/agent-skills` then install.
-- Add stack-specific MCP servers to `.mcp.json` only if the user has that dependency.
+## 2. Install default skills/plugins (automatic — full set)
+context7 (already in `.mcp.json`); graphify (copy `~/.claude/skills/graphify`); Matt Pocock
+(`npx -y skills@latest add mattpocock/skills`); Addy Osmani (`/plugin marketplace add addyosmani/agent-skills`
++ install). Verify each.
 
-## 3. Stack-specific tooling
-Pick modern defaults for the declared stack and WIRE them in (don't just mention):
-- Python → `ruff check` + `ruff format` + `pyrefly` (types) + `pytest`.
-- TS/JS → eslint + prettier + vitest/jest; respect existing config.
-- Go → golangci-lint + gofmt + `go test`.
-- Rust → clippy + rustfmt + `cargo test`.
-Then:
-- Fill `FORMAT_CMD` in `.claude/hooks/post-edit-format.ps1`.
-- Fill `DEPLOY_PATTERN` + `TEST_CMD` in `.claude/hooks/pre-deploy-guard.ps1` (only if a deploy target exists; else leave disabled).
-- Fill the Commands table in CLAUDE.md (dev/build/test/lint) so `/ship`, `/test` work.
-- Generate/extend config files for the chosen linters/formatters if missing.
+## 2b. Workflow-chosen skills/hooks (from interview H)
+Install/enable only what the user picked:
+- Toggle hooks in `.claude/settings.json`: keep/remove pre-deploy-guard, post-edit-format, notify per choice.
+- Set caveman level in `session-start.ps1`.
+- Domain skills: install the matching skills/plugins (e.g. frontend-design, security, perf, browser-testing).
+- Add chosen MCP servers to `.mcp.json` (github, chrome-devtools, db, ...).
+- Turn each described personal ritual into a `.claude/commands/<name>.md` or a `.claude/skills/<name>/SKILL.md`.
 
-## 4. Customize CLAUDE.md (keep it COMPACT — <200 lines, ideally <120)
-Replace every `<placeholder>`/`<TBD>` from interview answers: name, goal, domain, target platform,
-tech stack, commands table, architecture, key files. Be terse — one line per item, no prose padding;
-the file must cover everything but stay scannable. Trim sections that don't apply (remove the API note
-if no API). Keep the "Tooling available" section but drop any tool the user skipped.
-- Put the **project's target platform(s)** in CLAUDE.md (committed, shared).
-- Put the **dev machine specifics** (your OS/shell, local ports, WSL vs native) in CLAUDE.local.md.
-- Update `.claude/rules/*.md`: keep git.md + agents.md; trim/fill api.md, production.md, ui.md to match
-  reality or delete the irrelevant ones.
+## 3. Stack tooling — pick modern defaults and WIRE in
+Python→ruff+pyrefly+pytest; TS/JS→eslint+prettier+vitest/jest; Go→golangci-lint+gofmt+go test;
+Rust→clippy+rustfmt+cargo test. Then: fill `FORMAT_CMD` in post-edit-format.ps1; fill DEPLOY_PATTERN+TEST_CMD
+in pre-deploy-guard.ps1 (only if a deploy target exists); fill the CLAUDE.md Commands table; create missing
+linter/formatter configs. Respect existing configs in EXISTING mode.
 
-## 5. Local config + .gitignore
-- Copy `CLAUDE.local.md.example` → `CLAUDE.local.md` (real one gitignored) and fill local notes.
-- Copy `.claude/settings.local.json.example` → `.claude/settings.local.json` (gitignored). Keep
-  bypassPermissions unless the user wants prompts.
-- Copy `.env.example` → `.env` and add stack keys.
-- Write `LICENSE` for the chosen license (fill author + year); skip if "none".
-- Extend `.gitignore` with stack-appropriate entries (e.g. `__pycache__/`, `.venv/`, `target/`, `*.pyc`, build dirs).
+## 4. CLAUDE.md — write (new) or MERGE (existing). Keep COMPACT (<200 lines, aim <120)
+- NEW: fill every `<placeholder>`/`<TBD>` from the interview; one line per item; trim inapplicable sections.
+- EXISTING: do NOT overwrite. Read their CLAUDE.md; merge in only what's missing (the Tooling section for
+  rtk/context7/graphify/caveman, git rules, commands table) while preserving their content, ordering, and
+  voice. If they have none, create one. Keep it under 200 lines; if theirs is bloated, suggest trims, don't force.
+- Put target platform in CLAUDE.md; dev-machine specifics in CLAUDE.local.md.
+- `.claude/rules/*`: in EXISTING mode, add new rule files only if absent; never clobber theirs.
 
-## 6. Cleanup (automatic — remove ALL setup-phase artifacts, then verify)
-Do this BEFORE the first commit so history is clean. Delete the known template/setup artifacts without
-asking (they have no ongoing use); only confirm if a path is unexpectedly missing or modified:
-- `setup.ps1`, `setup.sh`, `scripts/` (install-tools.*)
-- `.claude/install-manifest.md`
-- `.claude/skills/project-onboarding/` (this skill — delete last)
-- `.claude/skills/example-skill/`
-- template `README.md` → replace with a fresh minimal project README (name + one-line + how to run).
-KEEP (ongoing value, do not delete): `.claude/` hooks/agents/rules/commands/output-styles/settings,
-`AGENTS.md`, `.gitattributes`, `.editorconfig`, `docs/`, `CHANGELOG.md`, all `*.example` files.
-Then grep the repo for leftovers and fix: `claude-template`, `TEMPLATE`, `<placeholder>`, `<TBD>`,
-`<PROJECT_NAME>`, "scaffold from claude-template". Confirm none remain.
+## 5. Local config + .gitignore + license
+Copy `*.example` → real files (CLAUDE.local.md, settings.local.json, .env) only if absent. Write `LICENSE`
+(skip if existing or "none"). Merge-append stack entries into `.gitignore` (dedupe; don't duplicate theirs).
 
-## 7. git init + first commit
-- `git init` (the template's own `.git` was already removed by the setup script).
-- Verify `.env`, `CLAUDE.local.md`, `.claude/settings.local.json` are gitignored (no secrets staged).
-- If the user wanted a remote: `gh repo create <name> --private --source=. --remote=origin` (confirm visibility).
-- Stage all, first commit: `chore: initial project setup`.
+## 6. Recommendations (after verify-ready, before commit)
+Based on stack + domain + workflow, SUGGEST high-value additions not yet installed — e.g. chrome-devtools
+MCP for web, security skills for auth/payments, performance skills if perf matters, ADR/docs discipline,
+github MCP, CI stub. Present as a short pick-list; install what the user accepts. Don't force.
 
-## 7b. Verify everything works
-Run `/doctor` and confirm every check is green: CLIs, context7 MCP (do a real resolve), graphify loads,
-Matt Pocock + Addy Osmani skills present, caveman active, cavecrew available, agents have correct
-models, hooks fire + status line shows. Fix any ✗ before reporting.
+## 7. Cleanup — leave NO trace (automatic, BEFORE the first commit)
+Delete without asking (confirm only if a path is unexpectedly missing/modified):
+- `.claude-template/` staging dir (EXISTING mode), `setup.ps1`, `setup.sh`, `scripts/`,
+  `.claude/install-manifest.md`, `.claude/skills/example-skill/`, and this skill
+  (`.claude/skills/project-onboarding/` — delete LAST), plus any `*.fromtemplate`/`*.template`/backup files.
+- NEW mode: replace template `README.md` with a fresh project README. EXISTING mode: keep their README untouched.
+KEEP: `.claude/` hooks/agents/rules/commands/output-styles/settings, `AGENTS.md`, `.gitattributes`,
+`.editorconfig`, `docs/`, `CHANGELOG.md`, `*.example`.
+Then grep and purge every leftover mention: `claude-template`, `TEMPLATE`, `<placeholder>`, `<TBD>`,
+`<PROJECT_NAME>`, "scaffold from claude-template". Verify none remain. Ensure no template git remote exists.
 
-## 8. Report
-Summarize: platform, stack detected, tools verified (✓/✗ each), skills installed, hooks/commands wired,
-files customized, files removed in cleanup, git status, and the `/doctor` result.
-List anything still needing the user
-(secrets in `.env`, a failed install, remote not created).
+## 8. Git
+- NEW: `git init` (template `.git` already removed by setup), verify secrets gitignored, first commit
+  `chore: initial project setup`.
+- EXISTING: keep their `.git` and history. Stage only the added/merged config; commit
+  `chore: add Claude Code config` (respect their commit conventions if known). Never force or rewrite history.
+- Remote: if requested, `gh repo create <name> --<visibility> --source=. --remote=origin` (confirm). Prefer `main`.
+
+## 8b. Verify
+Run `/doctor`; every check green (CLIs, context7 real resolve, graphify, Matt Pocock + Addy Osmani,
+caveman, cavecrew, agent models, hooks, status line). Fix any ✗ before reporting.
+
+## 9. Report
+Mode; platform; stack; tools verified (✓/✗); default + workflow skills installed; hooks/commands wired;
+files created vs merged; files removed in cleanup; `/doctor` result; git status; recommendations accepted;
+anything still needing the user (secrets in `.env`, failed install, remote).
 
 ## Rules
-- Cleanup of the known artifact list above is automatic — no per-file prompt. Confirm only for
-  deletions outside that list, creating a remote repo, or `git init` in an unexpected non-empty dir.
-- Never commit secrets. Ensure local/secret files are gitignored before the first commit.
-- If an install command fails, report it and continue; don't block the whole onboarding.
+- EXISTING mode is non-destructive: merge/append, back up before edits, NEVER delete user code or their `.git`.
+- Cleanup of the known template artifact list is automatic; confirm only outside that list.
+- Never commit secrets. Cross-platform: prefer `rg`/`fd`/path-agnostic ops; don't assume bash-only.
+- If an install fails, report and continue; don't block onboarding.
