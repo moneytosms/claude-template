@@ -184,8 +184,10 @@ Claude reads your manifests first and confirms instead of asking when it already
 ## The tooling
 
 ### Installed automatically by `setup` (CLIs)
-`git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `just`, `uv`, **`rtk`** — idempotent (skips if present).
+`pwsh` (PowerShell 7), `git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `just`, `uv`, **`rtk`** — idempotent (skips if present).
 Windows uses winget (rtk via release zip); macOS brew; Linux/WSL apt or dnf (uv/rtk via their installers).
+**pwsh 7 is required** — the `.claude` hooks + status line run through it. Auto-installed on Windows/macOS;
+on Linux it's flagged with an install link (distro-specific).
 On Debian/Ubuntu, `fd`/`bat` ship as `fdfind`/`batcat` — setup auto-symlinks them to `fd`/`bat`.
 `gitleaks` is installed only if you enable secret-scanning.
 

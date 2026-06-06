@@ -25,6 +25,7 @@ if (-not (Have winget) -and -not $DryRun) {
 }
 
 $tools = [ordered]@{
+    pwsh = "Microsoft.PowerShell"
     git  = "Git.Git"; node = "OpenJS.NodeJS.LTS"; gh = "GitHub.cli"
     rg   = "BurntSushi.ripgrep.MSVC"; fd = "sharkdp.fd"; jq = "jqlang.jq"
     bat  = "sharkdp.bat"; just = "Casey.Just"; uv = "astral-sh.uv"
@@ -59,7 +60,7 @@ if ((Have rtk) -and -not $DryRun) {
 
 # --- Verification summary ---
 Write-Host "`n== Verify ==" -ForegroundColor Cyan
-$all = @("git","node","gh","rg","fd","jq","bat","just","uv","rtk")
+$all = @("pwsh","git","node","gh","rg","fd","jq","bat","just","uv","rtk")
 $missing = @()
 foreach ($t in $all) {
     if (Have $t) { Write-Host "  [OK] $t" -ForegroundColor Green }

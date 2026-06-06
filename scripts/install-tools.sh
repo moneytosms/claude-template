@@ -15,11 +15,18 @@ ensure() { # ensure <cmd> <install-expr>
 echo "== Baseline CLIs =="
 OS="$(uname -s)"
 
+case "$OS" in
+  MINGW*|MSYS*|CYGWIN*)
+    echo "Detected a Windows shell ($OS). Use PowerShell instead: pwsh ./setup.ps1" >&2
+    exit 1 ;;
+esac
+
 if [ "$OS" = "Darwin" ]; then
   if ! have brew; then
     echo "[install] Homebrew"
     run '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
   fi
+  ensure pwsh "brew install powershell"
   ensure git  "brew install git"
   ensure node "brew install node"
   ensure gh   "brew install gh"
@@ -60,6 +67,8 @@ else
   ensure uv  "curl -LsSf https://astral.sh/uv/install.sh | sh"
   ensure rtk "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
   export PATH="$HOME/.local/bin:$PATH"
+  # PowerShell 7 (pwsh) runs the .claude hooks. Auto-install varies by distro; just flag it.
+  have pwsh || echo "[note] PowerShell 7 (pwsh) needed for .claude hooks. Install: https://learn.microsoft.com/powershell/scripting/install/installing-powershell-on-linux"
   # Debian/Ubuntu ship fd as fdfind and bat as batcat — alias to the expected names.
   if [ "$DRY" -eq 0 ]; then
     mkdir -p "$HOME/.local/bin"
@@ -78,7 +87,7 @@ fi
 echo ""
 echo "== Verify =="
 MISSING=""
-for t in git node gh rg fd jq bat just uv rtk; do
+for t in pwsh git node gh rg fd jq bat just uv rtk; do
   if have "$t"; then echo "  [OK] $t"; else echo "  [MISSING] $t"; MISSING="$MISSING $t"; fi
 done
 [ -n "$MISSING" ] && echo "" && echo "Missing:$MISSING. Re-run setup or install manually."
