@@ -1,0 +1,14 @@
+#!/bin/sh
+# Secret-scan pre-commit hook (OPT-IN). Enabled at onboarding via: git config core.hooksPath .githooks
+# Blocks a commit if gitleaks finds secrets in staged changes. POSIX sh: Windows(git-bash)/macOS/Linux.
+
+if command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks scanning staged changes..."
+  if ! gitleaks protect --staged --redact --no-banner; then
+    echo "pre-commit BLOCKED: potential secret detected. Remove it or use 'git commit --no-verify' if a false positive."
+    exit 1
+  fi
+else
+  echo "pre-commit: gitleaks not installed; skipping secret scan. Install: https://github.com/gitleaks/gitleaks"
+fi
+exit 0

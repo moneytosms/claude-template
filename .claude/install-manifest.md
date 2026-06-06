@@ -3,10 +3,12 @@
 Default tooling the `/project-onboarding` skill installs. Edit before sharing the template
 to change every future project's baseline. Onboarding runs these, verifies each, and reports.
 
-## MCP servers (already in `.mcp.json`, just need deps fetched on first use)
+## MCP servers
 | Name | How | Notes |
 |------|-----|-------|
-| context7 | `npx -y @upstash/context7-mcp@latest` | Live library docs. No key. |
+| context7 | already in `.mcp.json` (`npx -y @upstash/context7-mcp@latest`) | Live library docs. No key. Default. |
+| chrome-devtools | OPT-IN — add `npx chrome-devtools-mcp@latest` to `.mcp.json` | Powers browser-testing skill (DOM/console/network/perf). Recommend for web. |
+| github | OPT-IN — `npx -y @modelcontextprotocol/server-github` (needs `GITHUB_TOKEN`) | PR/issue/repo ops from chat. |
 
 ## Skills / plugins
 | Name | Install command | Notes |
@@ -23,8 +25,10 @@ to change every future project's baseline. Onboarding runs these, verifies each,
 | rg (ripgrep) | fast search | grep |
 | fd | fast find | find |
 | jq | JSON processing | — |
-| bat | cat with highlighting | cat |
+| bat | cat with highlighting | cat (Debian: batcat; setup aliases it) |
+| just | task runner (justfile) | npm scripts / make |
 | uv | fast Python pkg/venv mgr | pip + venv |
+| gitleaks (opt-in) | secret-scan pre-commit (`.githooks/pre-commit`) | install only if user enables secret scanning |
 | rtk (Rust Token Killer) | cuts cmd-output tokens 60-90%. github.com/rtk-ai/rtk. **Install** then **`rtk init -g`** (installs the PreToolUse Bash hook + RTK.md → auto-rewrites `git status`→`rtk git status` etc.; restart Claude after). Install per platform below. Verify: `rtk --version` + `rtk gain` (if `rtk gain` fails you got the wrong crate — use cargo --git). | run the command without rtk |
 
 Policy: prefer objectively faster/better modern tools when available.

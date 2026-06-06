@@ -134,12 +134,20 @@ Claude reads your manifests first and confirms instead of asking when it already
 | `docs/adr/template.md`, `0001-record-architecture-decisions.md` | Architecture Decision Records. |
 | `docs/specs/template.md` | Spec template (pairs with spec/plan skills). |
 
+### Other root files
+| Path | Purpose | Survives? |
+|------|---------|:---:|
+| `justfile` | Task runner (dev/build/test/lint), filled per stack. | ✅ if you chose `just` |
+| `.githooks/pre-commit` | gitleaks secret-scan (opt-in; wired via `core.hooksPath`). | ✅ if secret-scan enabled |
+| `.github/workflows/template-validate.yml` | Self-CI: validates the template's own scripts/JSON. | ❌ deleted (template-only) |
+
 ### `.claude/` — the permanent config
 | Path | Purpose | Survives? |
 |------|---------|:---:|
 | `settings.json` | Permissions (looser; denies push + `rm -rf`), hooks, Stop-notify, statusLine. | ✅ |
 | `settings.local.json.example` | → `settings.local.json` (gitignored): `bypassPermissions` on. | ✅ |
-| `statusline.ps1` | Status line: `dir \| ⎇ branch \| model`. | ✅ |
+| `statusline.ps1` | Status line: `dir \| ⎇ branch \| model \| $cost \| +/- lines`. | ✅ |
+| `licenses/` | MIT / Apache-2.0 templates onboarding writes from. | ❌ deleted after LICENSE written |
 | `install-manifest.md` | Declares what gets installed (edit to change the baseline). | ❌ deleted |
 | `hooks/session-start.ps1` | Git branch + last commit + activates **caveman full**. | ✅ |
 | `hooks/post-edit-format.ps1` | Auto-formats edited files (formatter set per stack). | ✅ |
@@ -164,7 +172,8 @@ Claude reads your manifests first and confirms instead of asking when it already
 
 ### Slash commands
 `/ship` (lint→build→test→deploy) · `/commit` (Conventional Commit) · `/pr` (gh PR) ·
-`/test` (run suite) · `/review` (diff review via code-reviewer) · `/doctor` (health-check all tooling).
+`/test` (run suite) · `/review` (diff review via code-reviewer) · `/doctor` (health-check all tooling) ·
+`/template-update` (pull the latest baseline hooks/agents/rules into an already-onboarded project).
 
 ### Subagents (cost-routed via `model:` frontmatter)
 `code-reviewer`, `debugger`, `planner` → **sonnet** (reasoning). `researcher`, `log-analyzer` → **haiku**
@@ -175,8 +184,10 @@ Claude reads your manifests first and confirms instead of asking when it already
 ## The tooling
 
 ### Installed automatically by `setup` (CLIs)
-`git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `uv`, **`rtk`** — idempotent (skips if present).
+`git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `just`, `uv`, **`rtk`** — idempotent (skips if present).
 Windows uses winget (rtk via release zip); macOS brew; Linux/WSL apt or dnf (uv/rtk via their installers).
+On Debian/Ubuntu, `fd`/`bat` ship as `fdfind`/`batcat` — setup auto-symlinks them to `fd`/`bat`.
+`gitleaks` is installed only if you enable secret-scanning.
 
 ### Installed automatically during onboarding (skills/MCP)
 | Tool | Type | Why | Source |
@@ -193,6 +204,14 @@ Windows uses winget (rtk via release zip); macOS brew; Linux/WSL apt or dnf (uv/
 - Scope: **Bash only**. Claude's Read/Grep/Glob bypass it — use shell or `rtk read`/`rtk grep` for those.
 - Platform: **full** on macOS/Linux/WSL; **native Windows has no auto-rewrite** (falls back to CLAUDE.md
   injection — call `rtk` explicitly). WSL recommended for the full hook.
+
+### Opt-in (offered in the interview / recommendations, installed only if accepted)
+| Tool | Type | Why |
+|------|------|-----|
+| **gitleaks** | pre-commit | Block committing secrets/keys. |
+| **chrome-devtools** | MCP | Real-browser testing (DOM/console/network/perf). |
+| **github** | MCP | PR/issue/repo ops from chat (needs `GITHUB_TOKEN`). |
+| **CI + `.github/`** | scaffold | Workflow stub, PR/issue templates, CODEOWNERS, dependabot. |
 
 ### Already global (assumed present, not installed by template)
 **caveman** (terse mode, default `full`, self-activated by session-start hook) and **cavecrew /

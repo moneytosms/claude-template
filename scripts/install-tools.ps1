@@ -27,7 +27,7 @@ if (-not (Have winget) -and -not $DryRun) {
 $tools = [ordered]@{
     git  = "Git.Git"; node = "OpenJS.NodeJS.LTS"; gh = "GitHub.cli"
     rg   = "BurntSushi.ripgrep.MSVC"; fd = "sharkdp.fd"; jq = "jqlang.jq"
-    bat  = "sharkdp.bat"; uv = "astral-sh.uv"
+    bat  = "sharkdp.bat"; just = "Casey.Just"; uv = "astral-sh.uv"
 }
 foreach ($t in $tools.GetEnumerator()) { Ensure-Tool $t.Key $t.Value }
 
@@ -59,7 +59,7 @@ if ((Have rtk) -and -not $DryRun) {
 
 # --- Verification summary ---
 Write-Host "`n== Verify ==" -ForegroundColor Cyan
-$all = @("git","node","gh","rg","fd","jq","bat","uv","rtk")
+$all = @("git","node","gh","rg","fd","jq","bat","just","uv","rtk")
 $missing = @()
 foreach ($t in $all) {
     if (Have $t) { Write-Host "  [OK] $t" -ForegroundColor Green }

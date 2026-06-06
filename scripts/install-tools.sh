@@ -27,6 +27,7 @@ if [ "$OS" = "Darwin" ]; then
   ensure fd   "brew install fd"
   ensure jq   "brew install jq"
   ensure bat  "brew install bat"
+  ensure just "brew install just"
   ensure uv   "brew install uv"
   ensure rtk  "brew install rtk"
 else
@@ -42,6 +43,7 @@ else
     ensure fd   "$P fd-find"
     ensure jq   "$P jq"
     ensure bat  "$P bat"
+    ensure just "$P just"
   elif have dnf; then
     P="$SUDO dnf install -y"
     ensure git  "$P git"
@@ -51,12 +53,19 @@ else
     ensure fd   "$P fd-find"
     ensure jq   "$P jq"
     ensure bat  "$P bat"
+    ensure just "$P just"
   else
-    echo "[warn] no apt-get/dnf found; install git node gh rg fd jq bat manually."
+    echo "[warn] no apt-get/dnf found; install git node gh rg fd jq bat just manually."
   fi
   ensure uv  "curl -LsSf https://astral.sh/uv/install.sh | sh"
   ensure rtk "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"
   export PATH="$HOME/.local/bin:$PATH"
+  # Debian/Ubuntu ship fd as fdfind and bat as batcat — alias to the expected names.
+  if [ "$DRY" -eq 0 ]; then
+    mkdir -p "$HOME/.local/bin"
+    if ! have fd  && have fdfind; then ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd";  echo "[alias] fd -> fdfind"; fi
+    if ! have bat && have batcat; then ln -sf "$(command -v batcat)" "$HOME/.local/bin/bat"; echo "[alias] bat -> batcat"; fi
+  fi
 fi
 
 # Wire rtk into Claude Code globally, non-interactive.
@@ -69,7 +78,7 @@ fi
 echo ""
 echo "== Verify =="
 MISSING=""
-for t in git node gh rg fd jq bat uv rtk; do
+for t in git node gh rg fd jq bat just uv rtk; do
   if have "$t"; then echo "  [OK] $t"; else echo "  [MISSING] $t"; MISSING="$MISSING $t"; fi
 done
 [ -n "$MISSING" ] && echo "" && echo "Missing:$MISSING. Re-run setup or install manually."

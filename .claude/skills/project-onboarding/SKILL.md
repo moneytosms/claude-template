@@ -37,7 +37,8 @@ than ask when the answer is already on disk. Cover ALL sections; stop at ~95% co
 **H. Workflow & preferences (drives which skills/hooks get installed)** —
   - Output style: terse vs explained; caveman level (off/lite/full/ultra).
   - Which automations to enable: pre-deploy test guard? auto-format on edit? notify-on-finish?
-    secret-scan pre-commit? commit-msg conventional-commit enforcement?
+    secret-scan pre-commit (gitleaks)? commit-msg conventional-commit enforcement?
+  - Task runner: use `just` (justfile) as the single dev/build/test/lint entrypoint? (else it's removed)
   - Commit/branch conventions; who is allowed to push; default branch name.
   - Domains needing extra skills: frontend design / security / performance / docs+ADR / browser testing
     / data / API design / infra. (Map each to a skill to install in step 2b.)
@@ -54,8 +55,12 @@ context7 (already in `.mcp.json`); graphify (copy `~/.claude/skills/graphify`); 
 Install/enable only what the user picked:
 - Toggle hooks in `.claude/settings.json`: keep/remove pre-deploy-guard, post-edit-format, notify per choice.
 - Set caveman level in `session-start.ps1`.
+- **Secret-scan**: if enabled, install `gitleaks` and `git config core.hooksPath .githooks` (the
+  `.githooks/pre-commit` runs it). If NOT enabled, delete `.githooks/`.
+- **Task runner**: if the user wants `just`, keep `justfile` and fill its recipes from the Commands
+  table; else delete `justfile`.
 - Domain skills: install the matching skills/plugins (e.g. frontend-design, security, perf, browser-testing).
-- Add chosen MCP servers to `.mcp.json` (github, chrome-devtools, db, ...).
+- Add chosen MCP servers to `.mcp.json` (github → needs `GITHUB_TOKEN`; chrome-devtools; db, ...).
 - Turn each described personal ritual into a `.claude/commands/<name>.md` or a `.claude/skills/<name>/SKILL.md`.
 
 ## 3. Stack tooling — pick modern defaults and WIRE in
@@ -73,19 +78,24 @@ linter/formatter configs. Respect existing configs in EXISTING mode.
 - `.claude/rules/*`: in EXISTING mode, add new rule files only if absent; never clobber theirs.
 
 ## 5. Local config + .gitignore + license
-Copy `*.example` → real files (CLAUDE.local.md, settings.local.json, .env) only if absent. Write `LICENSE`
-(skip if existing or "none"). Merge-append stack entries into `.gitignore` (dedupe; don't duplicate theirs).
+Copy `*.example` → real files (CLAUDE.local.md, settings.local.json, .env) only if absent.
+Write `LICENSE` from `.claude/licenses/<choice>.txt` (fill `<YEAR>`/`<AUTHOR>`; for Apache-2.0 fetch the
+full text from apache.org); skip if existing or "none". Merge-append stack entries into `.gitignore`
+(dedupe; don't duplicate theirs).
 
 ## 6. Recommendations (after verify-ready, before commit)
 Based on stack + domain + workflow, SUGGEST high-value additions not yet installed — e.g. chrome-devtools
-MCP for web, security skills for auth/payments, performance skills if perf matters, ADR/docs discipline,
-github MCP, CI stub. Present as a short pick-list; install what the user accepts. Don't force.
+MCP for web, github MCP for PR/issue ops, security skills for auth/payments, performance skills if perf
+matters, ADR/docs discipline, a CI workflow stub + `.github/` (PR/issue templates, CODEOWNERS, dependabot).
+Present as a short pick-list; scaffold/install what the user accepts. Don't force.
 
 ## 7. Cleanup — leave NO trace (automatic, BEFORE the first commit)
 Delete without asking (confirm only if a path is unexpectedly missing/modified):
 - `.claude-template/` staging dir (EXISTING mode), `setup.ps1`, `setup.sh`, `scripts/`,
-  `.claude/install-manifest.md`, `.claude/skills/example-skill/`, and this skill
-  (`.claude/skills/project-onboarding/` — delete LAST), plus any `*.fromtemplate`/`*.template`/backup files.
+  `.claude/install-manifest.md`, `.claude/licenses/` (after LICENSE written),
+  `.github/workflows/template-validate.yml` (template self-CI, not for projects),
+  `.claude/skills/example-skill/`, and this skill (`.claude/skills/project-onboarding/` — delete LAST),
+  plus any `*.fromtemplate`/`*.template`/backup files.
 - NEW mode: replace template `README.md` with a fresh project README. EXISTING mode: keep their README untouched.
 KEEP: `.claude/` hooks/agents/rules/commands/output-styles/settings, `AGENTS.md`, `.gitattributes`,
 `.editorconfig`, `docs/`, `CHANGELOG.md`, `*.example`.
