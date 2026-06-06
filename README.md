@@ -146,13 +146,11 @@ Claude reads your manifests first and confirms instead of asking when it already
 |------|---------|:---:|
 | `settings.json` | Permissions (looser; denies push + `rm -rf`), hooks, Stop-notify, statusLine. | ✅ |
 | `settings.local.json.example` | → `settings.local.json` (gitignored): `bypassPermissions` on. | ✅ |
-| `statusline.ps1` | Status line: `dir \| ⎇ branch \| model \| $cost \| +/- lines`. | ✅ |
+| `statusline.mjs` | Status line: `dir \| ⎇ branch \| model \| $cost \| +/- lines`. | ✅ |
 | `licenses/` | MIT / Apache-2.0 templates onboarding writes from. | ❌ deleted after LICENSE written |
 | `install-manifest.md` | Declares what gets installed (edit to change the baseline). | ❌ deleted |
-| `hooks/session-start.ps1` | Git branch + last commit + activates **caveman full**. | ✅ |
-| `hooks/post-edit-format.ps1` | Auto-formats edited files (formatter set per stack). | ✅ |
-| `hooks/pre-deploy-guard.ps1` | Blocks deploy commands if tests fail (exit 2). | ✅ |
-| `hooks/notify.ps1` | Beep + "✅ finished" on Stop. | ✅ |
+| `hooks/*.mjs` | Node hooks (cross-platform, no shell): session-start, post-edit-format, pre-deploy-guard, notify. | ✅ |
+| `hooks/_stdin.mjs` | Shared stdin-reader/JSON helper for the hooks. | ✅ |
 | `commands/` | `/ship /commit /pr /test /review /doctor`. | ✅ |
 | `agents/` | code-reviewer, debugger, planner (sonnet); researcher, log-analyzer (haiku). | ✅ |
 | `rules/` | `git`, `api`, `production`, `ui`, `agents` (model routing) — loaded on demand. | ✅ |
@@ -161,14 +159,14 @@ Claude reads your manifests first and confirms instead of asking when it already
 | `plugins/README.md` | Log of installed plugins. | ✅ |
 | `output-styles/concise.md` | No-fluff response style. | ✅ |
 
-### Hooks wired in `settings.json`
+### Hooks wired in `settings.json` (all Node — `node .claude/hooks/*.mjs`)
 | Event | Script | What it does |
 |-------|--------|--------------|
-| SessionStart | session-start.ps1 | git state + caveman on |
-| PostToolUse (Edit\|Write) | post-edit-format.ps1 | auto-format |
-| PreToolUse (Bash) | pre-deploy-guard.ps1 | block failing deploys |
-| Stop | notify.ps1 | finish ping |
-| statusLine | statusline.ps1 | prompt status line |
+| SessionStart | session-start.mjs | git state + caveman on |
+| PostToolUse (Edit\|Write) | post-edit-format.mjs | auto-format |
+| PreToolUse (Bash) | pre-deploy-guard.mjs | block failing deploys |
+| Stop | notify.mjs | finish ping |
+| statusLine | statusline.mjs | prompt status line |
 
 ### Slash commands
 `/ship` (lint→build→test→deploy) · `/commit` (Conventional Commit) · `/pr` (gh PR) ·
@@ -184,10 +182,9 @@ Claude reads your manifests first and confirms instead of asking when it already
 ## The tooling
 
 ### Installed automatically by `setup` (CLIs)
-`pwsh` (PowerShell 7), `git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `just`, `uv`, **`rtk`** — idempotent (skips if present).
+`git`, `node`, `gh`, `rg` (ripgrep), `fd`, `jq`, `bat`, `just`, `uv`, **`rtk`** — idempotent (skips if present).
 Windows uses winget (rtk via release zip); macOS brew; Linux/WSL apt or dnf (uv/rtk via their installers).
-**pwsh 7 is required** — the `.claude` hooks + status line run through it. Auto-installed on Windows/macOS;
-on Linux it's flagged with an install link (distro-specific).
+Hooks + status line are **Node** (`.mjs`) — cross-platform, no PowerShell needed (node is already installed).
 On Debian/Ubuntu, `fd`/`bat` ship as `fdfind`/`batcat` — setup auto-symlinks them to `fd`/`bat`.
 `gitleaks` is installed only if you enable secret-scanning.
 
@@ -240,7 +237,7 @@ By design, to stay generic — onboarding adds these only if your project needs 
 Fork this repo and edit, so every future project inherits your defaults:
 - `.claude/install-manifest.md` — which skills/plugins/MCP/CLIs install.
 - `scripts/install-tools.*` — add/remove CLIs or change package IDs.
-- `.claude/hooks/session-start.ps1` — default caveman level (or disable).
+- `.claude/hooks/session-start.mjs` — default caveman level (or disable).
 - `.claude/settings.json` — permission allow/deny, hooks, status line.
 - `.claude/agents/`, `.claude/rules/`, `.claude/commands/` — your standard kit.
 
@@ -257,9 +254,11 @@ Fork this repo and edit, so every future project inherits your defaults:
 - *Tools "not found" right after install* → open a new terminal (PATH update) or run the printed `export PATH`/`$env:PATH` line.
 - *rtk not rewriting on Windows* → expected on native Windows; use WSL or call `rtk` explicitly.
 - *`npx skills add` prompts* → that installer is interactive; pick your skills when asked.
+- *Hooks not firing* → ensure `node` is on PATH (hooks run via `node`). Run `/doctor`.
 
 ---
 
 ## Requirements
-PowerShell 7 (`pwsh`) on Windows; a POSIX shell elsewhere. Claude Code CLI. `gh` for remotes.
-Internet for first install. winget (Windows) / brew (macOS) / apt or dnf (Linux) for CLI installs.
+**Bootstrap:** Windows runs `setup.ps1` (any PowerShell, incl. 5.1); macOS/Linux/WSL run `setup.sh`.
+**Runtime:** `node` (runs the hooks + status line — no PowerShell needed) + the Claude Code CLI.
+`gh` for remotes. Internet for first install. winget (Windows) / brew (macOS) / apt or dnf (Linux).

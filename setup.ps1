@@ -13,9 +13,6 @@ $root = $PSScriptRoot
 Set-Location $root
 
 Write-Host "claude-template setup" -ForegroundColor Cyan
-if ($PSVersionTable.PSVersion.Major -lt 7) {
-    Write-Host "Run with PowerShell 7 (pwsh), not Windows PowerShell 5." -ForegroundColor Yellow
-}
 if (-not (Test-Path "$root/.claude/skills/project-onboarding/SKILL.md")) {
     Write-Error "Doesn't look like claude-template (onboarding skill missing). Aborting."
     exit 1

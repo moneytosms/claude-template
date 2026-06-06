@@ -29,6 +29,10 @@ jobs:
           }
           exit $bad
 
+      - name: Node module syntax (.mjs)
+        run: |
+          for f in $(git ls-files '*.mjs'); do echo "checking $f"; node --check "$f"; done
+
       - name: JSON valid
         run: |
           for f in $(git ls-files '*.json'); do

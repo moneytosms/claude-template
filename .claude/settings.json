@@ -33,7 +33,7 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/session-start.ps1" }
+          { "type": "command", "command": "node .claude/hooks/session-start.mjs" }
         ]
       }
     ],
@@ -41,7 +41,7 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/post-edit-format.ps1" }
+          { "type": "command", "command": "node .claude/hooks/post-edit-format.mjs" }
         ]
       }
     ],
@@ -49,20 +49,20 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/pre-deploy-guard.ps1" }
+          { "type": "command", "command": "node .claude/hooks/pre-deploy-guard.mjs" }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/notify.ps1" }
+          { "type": "command", "command": "node .claude/hooks/notify.mjs" }
         ]
       }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File .claude/statusline.ps1"
+    "command": "node .claude/statusline.mjs"
   }
 }

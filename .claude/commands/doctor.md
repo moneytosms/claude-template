@@ -5,8 +5,8 @@ description: Health-check the project's Claude tooling — CLIs, MCP, skills, ag
 Verify everything is wired and working. Run checks, report one line each (✓/✗ + how to fix), then a summary.
 
 ## CLIs (via Bash)
-- `pwsh --version` (REQUIRED — hooks/status line run via pwsh; if missing, hooks silently no-op),
-- `git --version`, `node --version`, `gh --version`, `rg --version`, `fd --version` (or `fdfind`),
+- `node --version` (REQUIRED — hooks + status line run via `node`; if missing, hooks silently no-op),
+- `git --version`, `gh --version`, `rg --version`, `fd --version` (or `fdfind`),
   `jq --version`, `bat --version` (or `batcat`), `just --version`, `uv --version`, `rtk --version`.
 - If secret-scan enabled: `gitleaks version` + `git config core.hooksPath` = `.githooks`.
 - `rtk gain` works (if it errors → wrong `rtk` crate; reinstall via cargo --git or release binary).

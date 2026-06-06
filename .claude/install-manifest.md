@@ -21,7 +21,7 @@ to change every future project's baseline. Onboarding runs these, verifies each,
 ## CLIs ensured at onboarding (step 0)
 | Tool | Purpose | Fallback |
 |------|---------|----------|
-| git, node, gh, pwsh | core | required |
+| git, node, gh | core (node also runs the `.claude` hooks + status line) | required |
 | rg (ripgrep) | fast search | grep |
 | fd | fast find | find |
 | jq | JSON processing | — |
