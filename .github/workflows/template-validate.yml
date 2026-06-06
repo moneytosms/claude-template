@@ -23,7 +23,8 @@ jobs:
           $bad = 0
           foreach ($f in (git ls-files '*.ps1')) {
             $e = $null
-            [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path $f), [ref]$null, [ref]$e)
+            $full = (Resolve-Path -LiteralPath $f).Path
+            [void][System.Management.Automation.Language.Parser]::ParseFile($full, [ref]$null, [ref]$e)
             if ($e) { Write-Host "PARSE ERROR $f : $($e[0].Message)"; $bad = 1 } else { Write-Host "ok $f" }
           }
           exit $bad
