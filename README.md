@@ -13,14 +13,15 @@ Works for **new and existing** projects, on **Windows / macOS / Linux / WSL**.
 
 ## Table of contents
 1. [Quick start](#quick-start)
-2. [The full flow](#the-full-flow)
-3. [Setup flags](#setup-flags)
-4. [Everything in the box](#everything-in-the-box)
-5. [The tooling — what gets installed & why](#the-tooling)
-6. [What is NOT included (by design)](#what-is-not-included)
-7. [Customize the baseline](#customize-the-baseline)
-8. [Re-running, health checks, troubleshooting](#re-running--health-checks)
-9. [Requirements](#requirements)
+2. [Adding to an existing project](#adding-to-an-existing-project)
+3. [The full flow](#the-full-flow)
+4. [Setup flags](#setup-flags)
+5. [Everything in the box](#everything-in-the-box)
+6. [The tooling — what gets installed & why](#the-tooling)
+7. [What is NOT included (by design)](#what-is-not-included)
+8. [Customize the baseline](#customize-the-baseline)
+9. [Re-running, health checks, troubleshooting](#re-running--health-checks)
+10. [Requirements](#requirements)
 
 ---
 
@@ -34,14 +35,72 @@ pwsh ./setup.ps1          # Windows
 sh   ./setup.sh           # macOS / Linux / WSL / git-bash
 ```
 
-**Existing project** (merge into a repo you already have — keeps its git history & files):
-```sh
-git clone https://github.com/moneytosms/claude-template /tmp/ct && cd /tmp/ct
-pwsh ./setup.ps1 -Into C:\path\to\existing      # Windows
-sh   ./setup.sh  --into /path/to/existing       # macOS / Linux / WSL
-```
+**Existing project** — see [Adding to an existing project](#adding-to-an-existing-project) below.
 
 That's it. The only thing you do by hand is answer the interview.
+
+---
+
+## Adding to an existing project
+
+Three paths — pick the one that fits your situation. All are non-destructive: your code, git
+history, and existing `.claude/` customizations are never clobbered.
+
+### Path A — setup script (recommended; also installs CLIs + rtk)
+Run this from anywhere. The template is cloned to a temp location, merged into your project, then
+the temp clone is deleted.
+
+```sh
+# macOS / Linux / WSL
+git clone https://github.com/moneytosms/claude-template /tmp/ct
+sh /tmp/ct/setup.sh --into /path/to/your-project
+
+# Windows (PowerShell)
+git clone https://github.com/moneytosms/claude-template $env:TEMP\ct
+pwsh $env:TEMP\ct\setup.ps1 -Into C:\path\to\your-project
+```
+
+This installs `git node gh rg fd jq bat uv rtk`, runs `rtk init -g --auto-patch`, stages the
+template into `your-project/.claude-template/`, then launches Claude to run `/project-onboarding`.
+
+### Path B — already in Claude Code (no CLI setup, no temp clone)
+If you have Claude Code open in your existing project and just want to add the config, run:
+
+```
+/project-onboarding
+```
+
+Claude detects it's an existing project (has `.git`, no staging dir), bootstraps by cloning the
+template into `.claude-template-tmp/`, merges config, then cleans up. CLIs/rtk are NOT auto-installed
+(Claude will flag any missing tools via `/doctor` after onboarding and give you the install commands).
+
+### Path C — manual copy (when you prefer full control)
+Copy `.claude/` from the template into your project, then kick off onboarding:
+
+```sh
+# Download just the .claude/ folder (no full clone needed)
+git clone --depth 1 https://github.com/moneytosms/claude-template /tmp/ct
+cp -r /tmp/ct/.claude /tmp/ct/.mcp.json /tmp/ct/.gitignore /tmp/ct/CLAUDE.md \
+      /tmp/ct/AGENTS.md /tmp/ct/.gitattributes /tmp/ct/.editorconfig \
+      /path/to/your-project/
+rm -rf /tmp/ct
+```
+
+Then open your project in Claude Code and run `/project-onboarding`. Onboarding detects the
+template files are present (no staging dir but setup.* absent), proceeds in EXISTING merge mode.
+
+### What all three paths do the same
+
+| Step | Result |
+|------|--------|
+| Mode detection | EXISTING — merge, never clobber |
+| Your `.git` | **untouched** |
+| Your code / README | **untouched** |
+| `CLAUDE.md` | **merged** — your content kept; template tooling section added where missing |
+| `.claude/rules/` | added only where absent; never overwrites yours |
+| `.claude/hooks/` | added if absent; yours kept if already customized |
+| Commit | `chore: add Claude Code config` to your existing history |
+| Cleanup | all template staging files deleted; no trace left |
 
 ---
 
@@ -89,15 +148,17 @@ Claude reads your manifests first and confirms instead of asking when it already
 - **I. Git/remote** — existing remote? create one? visibility? default branch.
 
 ### New vs existing — what differs
-| | NEW project | EXISTING project |
-|---|---|---|
-| Trigger | `setup` (no `--into`) | `setup --into <path>` |
-| Your `.git` | template's is deleted; fresh `git init` | **untouched** — kept |
-| Your files | none to protect | **never clobbered**; merge only |
-| `CLAUDE.md` | written from template | **merged** — adds only what's missing |
-| `.claude/` rules | all added | added only where absent |
-| README | template README → fresh project README | your README left alone |
-| Commit | `chore: initial project setup` | `chore: add Claude Code config` |
+| | NEW project | EXISTING — Path A/C | EXISTING — Path B (Claude-only) |
+|---|---|---|---|
+| Trigger | `setup` (no `--into`) | `setup --into` or manual copy | `/project-onboarding` in Claude |
+| CLIs + rtk installed | ✅ auto | ✅ auto (Path A) / ❌ manual (Path C) | ❌ — flagged by `/doctor` after |
+| Your `.git` | template's deleted; fresh `git init` | **untouched** | **untouched** |
+| Your files | none to protect | **never clobbered**; merge only | **never clobbered**; merge only |
+| Template staging | copied by `setup` | copied by `setup` / manual | **auto-cloned** into `.claude-template-tmp/` |
+| `CLAUDE.md` | written from template | **merged** — adds only what's missing | **merged** — adds only what's missing |
+| `.claude/` rules | all added | added only where absent | added only where absent |
+| README | template → fresh project README | your README left alone | your README left alone |
+| Commit | `chore: initial project setup` | `chore: add Claude Code config` | `chore: add Claude Code config` |
 
 ---
 
@@ -144,9 +205,9 @@ Claude reads your manifests first and confirms instead of asking when it already
 ### `.claude/` — the permanent config
 | Path | Purpose | Survives? |
 |------|---------|:---:|
-| `settings.json` | Permissions (looser; denies push + `rm -rf`), hooks, Stop-notify, statusLine. | ✅ |
+| `settings.json` | Permissions (denies push + broad `rm -rf *`; allows specific cleanup paths), hooks, statusLine. | ✅ |
 | `settings.local.json.example` | → `settings.local.json` (gitignored): `bypassPermissions` on. | ✅ |
-| `statusline.mjs` | Status line: `dir \| ⎇ branch \| model \| $cost \| +/- lines`. | ✅ |
+| `statusline.mjs` | Status line: `dir \| ⎇ branch \| model \| ctx% \| 5h/7d rate-limit% \| +/- lines`. | ✅ |
 | `licenses/` | MIT / Apache-2.0 templates onboarding writes from. | ❌ deleted after LICENSE written |
 | `install-manifest.md` | Declares what gets installed (edit to change the baseline). | ❌ deleted |
 | `hooks/*.mjs` | Node hooks (cross-platform, no shell): session-start, post-edit-format, pre-deploy-guard, notify. | ✅ |
@@ -255,6 +316,8 @@ Fork this repo and edit, so every future project inherits your defaults:
 - *rtk not rewriting on Windows* → expected on native Windows; use WSL or call `rtk` explicitly.
 - *`npx skills add` prompts* → that installer is interactive; pick your skills when asked.
 - *Hooks not firing* → ensure `node` is on PATH (hooks run via `node`). Run `/doctor`.
+- *Path B: CLIs missing after onboarding* → run `/doctor` for a ✗ list with fix commands, or run `setup --into .` from a cloned template copy to install them all at once.
+- *Path B: template clone fails during bootstrap* → check internet + GitHub auth (`gh auth status`). If the repo is private and unauthenticated, use Path A or C instead.
 
 ---
 

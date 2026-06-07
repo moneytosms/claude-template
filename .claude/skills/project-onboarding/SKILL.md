@@ -10,22 +10,42 @@ their workflow preferences — with **zero trace** that claude-template was ever
 existing projects, cross-platform. Be terse, but ASK clearly where input is required.
 
 ## Mode detection (do FIRST)
-- **Staging present** (`.claude-template/` dir exists): EXISTING-project mode. Setup copied the template
-  here as staging; merge from it into the real repo, never clobbering the user's files, then delete it.
-- **Already onboarded** (no setup.* files AND CLAUDE.md has no `<placeholder>`/`<TBD>`): just run `/doctor`,
-  fix issues, report, stop.
-- **Fresh template clone** (setup.* present, little/no other code): NEW-project mode.
-- Otherwise (real code/.git but template files mixed in): EXISTING-project mode — merge, keep their history.
-Confirm the detected mode in one line before proceeding. In EXISTING mode: read their current
-`CLAUDE.md`, `.claude/**`, `README`, and package manifests BEFORE changing anything.
 
-## 0. Verify tools (setup already installed them)
-`scripts/install-tools` installed git/node/gh/rg/fd/jq/bat/uv/rtk + ran `rtk init -g`. Verify:
-`rtk --version` + `rtk gain` (failure = wrong crate). Install anything missing non-interactively.
+Detect exactly one mode, confirm it in one line, then proceed.
 
-## 1. Interview — HEAVILY DETAILED (batch via the question UI; confirm from files before asking)
+- **Already onboarded** — no setup.* AND CLAUDE.md has no `<placeholder>`/`<TBD>` AND `.claude/hooks/`
+  exists: just run `/doctor`, fix any ✗, report, stop.
+- **Fresh template clone** — setup.* present AND little/no user code: NEW-project mode.
+- **Staging present** — `.claude-template/` dir exists (placed here by `setup --into`): EXISTING mode.
+  Merge from the staging dir into the real repo, then delete it.
+- **Bootstrap needed** — `.git` exists, real user code present, NO staging dir AND NO setup.* files:
+  EXISTING mode, no staging. **Auto-bootstrap**: clone the template into `.claude-template-tmp/`
+  (`git clone https://github.com/moneytosms/claude-template .claude-template-tmp --depth 1`), then
+  treat `.claude-template-tmp/` as the staging dir. Proceed as staging-present EXISTING mode; the
+  cleanup step (§7) deletes `.claude-template-tmp/` like any staging dir. Tell the user you are
+  doing this. Note: CLIs/rtk were NOT installed — after onboarding, flag missing tools via `/doctor`.
+- **Template files without setup.*** — real code + `.git` + template config already copied in manually:
+  EXISTING mode (merge only what's absent; skip the bootstrap clone since files already exist).
+
+In EXISTING mode: read their current `CLAUDE.md`, `.claude/**`, `README`, and package manifests
+BEFORE changing anything.
+
+## 0. Verify tools
+If setup.* was run: `scripts/install-tools` already installed git/node/gh/rg/fd/jq/bat/uv/rtk.
+If Path B (Claude-only bootstrap): tools may be missing — check each with `--version`; report ✗ but
+don't block onboarding. Install anything missing non-interactively where possible.
+Always verify: `rtk --version` + `rtk gain` (failure = wrong crate; reinstall via cargo --git).
+
+## 1. Interview — HEAVILY DETAILED (ask sequentially; confirm from files before asking)
 Read existing manifests (package.json, pyproject.toml, go.mod, Cargo.toml, etc.) and CONFIRM rather
 than ask when the answer is already on disk. Cover ALL sections; stop at ~95% confidence.
+
+**AskUserQuestion limit: max 4 questions per call, must be multiple-choice. Split the interview into
+batches of ≤4 questions each, or ask conversationally. Never batch all 9 categories in one call.**
+
+Round 1 (identity + platform + stack): A, B, C  
+Round 2 (commands + quality + architecture): D, E, F  
+Round 3 (product + workflow + git): G, H, I
 
 **A. Identity** — name; one-line goal; audience; the problem it solves; what "success" looks like.
 **B. Platform** — dev OS + shell (Windows/macOS/Linux/WSL); target platform(s); runtime/version.
@@ -54,9 +74,10 @@ context7 (already in `.mcp.json`); graphify (copy `~/.claude/skills/graphify`); 
 ## 2b. Workflow-chosen skills/hooks (from interview H)
 Install/enable only what the user picked:
 - Toggle hooks in `.claude/settings.json`: keep/remove pre-deploy-guard, post-edit-format, notify per choice.
-- Set caveman level in `session-start.ps1`.
-- **Secret-scan**: if enabled, install `gitleaks` and `git config core.hooksPath .githooks` (the
-  `.githooks/pre-commit` runs it). If NOT enabled, delete `.githooks/`.
+- Set caveman level in `.claude/hooks/session-start.mjs` (edit `CAVEMAN_LEVEL` constant).
+- **Secret-scan**: if enabled, install `gitleaks`, then run `chmod +x .githooks/pre-commit` and
+  `git config core.hooksPath .githooks` (the `.githooks/pre-commit` runs it). Verify with
+  `git config core.hooksPath`. If NOT enabled, delete `.githooks/`.
 - **Task runner**: if the user wants `just`, keep `justfile` and fill its recipes from the Commands
   table; else delete `justfile`.
 - Domain skills: install the matching skills/plugins (e.g. frontend-design, security, perf, browser-testing).
@@ -65,9 +86,10 @@ Install/enable only what the user picked:
 
 ## 3. Stack tooling — pick modern defaults and WIRE in
 Python→ruff+pyrefly+pytest; TS/JS→eslint+prettier+vitest/jest; Go→golangci-lint+gofmt+go test;
-Rust→clippy+rustfmt+cargo test. Then: fill `FORMAT_CMD` in post-edit-format.ps1; fill DEPLOY_PATTERN+TEST_CMD
-in pre-deploy-guard.ps1 (only if a deploy target exists); fill the CLAUDE.md Commands table; create missing
-linter/formatter configs. Respect existing configs in EXISTING mode.
+Rust→clippy+rustfmt+cargo test. Then: fill `FORMAT_CMD` in `.claude/hooks/post-edit-format.mjs`; fill
+`DEPLOY_PATTERN`+`TEST_CMD` in `.claude/hooks/pre-deploy-guard.mjs` (only if a deploy target exists);
+fill the CLAUDE.md Commands table; create missing linter/formatter configs. Respect existing configs in
+EXISTING mode.
 
 ## 4. CLAUDE.md — write (new) or MERGE (existing). Keep COMPACT (<200 lines, aim <120)
 - NEW: fill every `<placeholder>`/`<TBD>` from the interview; one line per item; trim inapplicable sections.
@@ -91,7 +113,7 @@ Present as a short pick-list; scaffold/install what the user accepts. Don't forc
 
 ## 7. Cleanup — leave NO trace (automatic, BEFORE the first commit)
 Delete without asking (confirm only if a path is unexpectedly missing/modified):
-- `.claude-template/` staging dir (EXISTING mode), `setup.ps1`, `setup.sh`, `scripts/`,
+- `.claude-template/` and `.claude-template-tmp/` staging dirs (EXISTING mode), `setup.ps1`, `setup.sh`, `scripts/`,
   `.claude/install-manifest.md`, `.claude/licenses/` (after LICENSE written),
   `.github/workflows/template-validate.yml` (template self-CI, not for projects),
   `.claude/skills/example-skill/`, and this skill (`.claude/skills/project-onboarding/` — delete LAST),

@@ -42,7 +42,7 @@ if [ "$YES" -eq 0 ] && [ "$DRY" -eq 0 ]; then
   else
     printf "Install tooling, strip template git history, and start onboarding here? (y/N) "
   fi
-  read confirm; [ "$confirm" = "y" ] || { echo "Aborted."; exit 0; }
+  read -r confirm; [ "$confirm" = "y" ] || { echo "Aborted."; exit 0; }
 fi
 
 # 1) Auto-install CLIs + rtk (idempotent).

@@ -47,12 +47,12 @@ library questions or writing integration code** — training data may be stale. 
 in `.mcp.json`; no key needed.
 
 ### rtk (Rust Token Killer)
-Cuts command-output tokens 60-90%. `rtk init -g` installs a PreToolUse Bash hook that auto-rewrites
-Bash commands (`git status`→`rtk git status`, etc.) — no action needed for Bash. The hook does NOT
-cover Read/Grep/Glob, so for those use shell (`cat`/`rg`) or explicit `rtk read`/`rtk grep`. For
-logs/tests/errors prefer `rtk log <f>`, `rtk test <cmd>`, `rtk err <cmd>`; if clean, trust it and move
-on, re-run without rtk only when full output is needed. Native Windows: no auto-rewrite (call rtk
-explicitly); WSL gives full support.
+Cuts command-output tokens 60-90% by **truncating/summarizing** output — NOT returning full output.
+`rtk init -g` installs a PreToolUse Bash hook that auto-rewrites Bash commands (`git status`→`rtk git
+status`, etc.). **Critical**: for operations where missing lines would cause wrong decisions (full `git
+diff`, complete test output, error traces) — re-run without rtk prefix to get untruncated results. The
+hook does NOT cover Read/Grep/Glob; use shell (`cat`/`rg`) or explicit `rtk read`/`rtk grep`. Native
+Windows: no auto-rewrite (call rtk explicitly); WSL gives full support.
 
 ### graphify (skill)
 Turn any input (code, docs, papers, images) into a clustered knowledge graph
@@ -64,8 +64,8 @@ Terse output mode (active `full` via session-start hook). Toggle: `/caveman lite
 disable with "stop caveman". Code/commits/security always written normally.
 
 ### Skills & agents
-Engineering skills (Matt Pocock + Addy Osmani sets) and subagents installed at setup.
-List skills with the Skill tool; agents live in `.claude/agents/`.
+Engineering skills (Matt Pocock + Addy Osmani sets) installed during `/project-onboarding` — run it
+if not yet done. List installed skills with the Skill tool; agents live in `.claude/agents/`.
 Route spawned subagents to the cheapest viable model (haiku for recon/edits, sonnet for reasoning) —
 see [agent rules](.claude/rules/agents.md).
 

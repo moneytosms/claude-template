@@ -29,7 +29,7 @@ to change every future project's baseline. Onboarding runs these, verifies each,
 | just | task runner (justfile) | npm scripts / make |
 | uv | fast Python pkg/venv mgr | pip + venv |
 | gitleaks (opt-in) | secret-scan pre-commit (`.githooks/pre-commit`) | install only if user enables secret scanning |
-| rtk (Rust Token Killer) | cuts cmd-output tokens 60-90%. github.com/rtk-ai/rtk. **Install** then **`rtk init -g`** (installs the PreToolUse Bash hook + RTK.md → auto-rewrites `git status`→`rtk git status` etc.; restart Claude after). Install per platform below. Verify: `rtk --version` + `rtk gain` (if `rtk gain` fails you got the wrong crate — use cargo --git). | run the command without rtk |
+| rtk (Rust Token Killer) | cuts cmd-output tokens 60-90% by **truncating** output (not summarizing). github.com/rtk-ai/rtk. **Install** then **`rtk init -g`** (installs the PreToolUse Bash hook + RTK.md → auto-rewrites `git status`→`rtk git status` etc.; restart Claude after). **Re-run without rtk prefix for critical diffs/full output.** Verify: `rtk --version` + `rtk gain` (if `rtk gain` fails you got the wrong crate — use cargo --git). | run the command without rtk |
 
 Policy: prefer objectively faster/better modern tools when available.
 
