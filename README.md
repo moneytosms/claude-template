@@ -7,7 +7,7 @@ with a clean, fully-configured project and **no trace** the template was ever th
 
 Works for **new and existing** projects, on **Windows / macOS / Linux / WSL**.
 
-- Repo: https://github.com/moneytosms/claude-template (private)
+- Repo: https://github.com/moneytosms/claude-template 
 
 ---
 
